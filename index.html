@@ -48,7 +48,6 @@
         .progress-fill { height: 100%; background: var(--accent); transition: 0.5s; }
         .pop-badge { background: var(--gold); color: #000; font-size: 9px; padding: 2px 5px; border-radius: 3px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
         
-        /* Admin başlıkları için ek stil */
         .admin-sub-title { margin-top: 30px; border-bottom: 1px solid #ddd; padding-bottom: 5px; color: var(--accent); }
     </style>
 </head>
@@ -115,18 +114,14 @@
 </div>
 
 <script>
+    // Başlangıç Havuzu
     const masterPool = [
         { id: 1, name: "Hypixel", ip: "mc.hypixel.net", banner: "", approved: true, desc_tr: "Dünyanın en büyüğü.", desc_en: "World's largest." },
         { id: 2, name: "CraftRise", ip: "play.craftrise.tc", banner: "", approved: true, desc_tr: "Türk Network.", desc_en: "Turkish Network." },
         { id: 3, name: "SonOyuncu", ip: "play.sonoyuncu.network", banner: "", approved: true, desc_tr: "Efsanevi Türk sunucusu.", desc_en: "Legendary Turkish server." }
     ];
 
-    if (!localStorage.getItem('v22_full_management')) {
-        localStorage.clear();
-        localStorage.setItem('myServers', JSON.stringify(masterPool));
-        localStorage.setItem('v22_full_management', 'true');
-    }
-
+    // Hafıza Kontrolü
     let servers = JSON.parse(localStorage.getItem('myServers')) || masterPool;
     let isAdmin = sessionStorage.getItem('isAdmin') === 'true';
     let curLang = localStorage.getItem('lang') || 'tr';
@@ -137,24 +132,27 @@
             logo: "MC Listesi", home: "Ana Sayfa", add: "Sunucu Ekle", admin: "Admin", about: "Hakkımızda",
             rank: "Sıra", name: "Sunucu", server: "Banner", info: "Durum", copy: "Kopyala",
             online: "Aktif", search: "Sunucu ara...", add_title: "Yeni Sunucu Öner", submit: "Gönder",
-            admin_title: "Admin Kontrol Paneli", logout: "Çıkış Yap",
+            admin_title: "Admin Paneli", logout: "Çıkış Yap",
             ph_name: "Sunucu İsmi", ph_ip: "Sunucu Adresi (IP)", ph_banner: "Banner Görsel URL", ph_desc: "Kısa Açıklama",
-            about_title: "Hakkımızda", about_content: "Bu liste, en aktif Minecraft sunucularını bulmanız için tasarlanmıştır. Sunucular gerçek zamanlı oyuncu sayılarına göre sıralanır.",
-            no_pending: "Onay bekleyen sunucu yok.", no_active: "Yayında sunucu yok.", msg_ok: "Gönderildi!", msg_err: "Eksik bilgi!"
+            about_title: "Hakkımızda", about_content: "En aktif Minecraft sunucularını bulmanız için tasarlandı.",
+            no_pending: "Bekleyen yok.", no_active: "Yayında yok.", msg_ok: "Gönderildi!", msg_err: "Eksik bilgi!"
         },
         en: { 
             logo: "MC List", home: "Home", add: "Add Server", admin: "Admin", about: "About Us",
             rank: "Rank", name: "Server", server: "Banner", info: "Status", copy: "Copy",
-            online: "Online", search: "Search server...", add_title: "Suggest Server", submit: "Submit",
+            online: "Online", search: "Search...", add_title: "Suggest Server", submit: "Submit",
             admin_title: "Admin Panel", logout: "Logout",
             ph_name: "Server Name", ph_ip: "Server IP", ph_banner: "Banner URL", ph_desc: "Description",
-            about_title: "About Us", about_content: "This list helps you find the most active Minecraft servers. Ranked by live player counts.",
-            no_pending: "No pending servers.", no_active: "No active servers.", msg_ok: "Submitted!", msg_err: "Missing info!"
+            about_title: "About Us", about_content: "Designed to find the most active Minecraft servers.",
+            no_pending: "No pending.", no_active: "No active.", msg_ok: "Submitted!", msg_err: "Missing info!"
         }
     };
 
     function applySettings() {
+        // Tema ve Dil Hafızası
         document.body.className = curTheme === 'dark' ? 'dark-mode' : '';
+        document.getElementById('btn-theme').innerText = curTheme === 'dark' ? '☀️' : '🌙';
+        
         const d = langPack[curLang];
         document.getElementById('txt-logo').innerText = d.logo;
         document.getElementById('nav-home').innerText = d.home;
@@ -169,82 +167,16 @@
         document.getElementById('txt-add-title').innerText = d.add_title;
         document.getElementById('btn-submit').innerText = d.submit;
         document.getElementById('btn-lang').innerText = curLang === 'tr' ? 'EN' : 'TR';
-        document.getElementById('f-name').placeholder = d.ph_name;
-        document.getElementById('f-ip').placeholder = d.ph_ip;
-        document.getElementById('f-banner').placeholder = d.ph_banner;
-        document.getElementById('f-desc').placeholder = d.ph_desc;
-        document.getElementById('txt-about-title').innerText = d.about_title;
-        document.getElementById('txt-about-content').innerText = d.about_content;
+        
         render();
         if(isAdmin) renderAdmin();
     }
 
-    async function userAddServer() {
-        const name = document.getElementById('f-name').value;
-        const ip = document.getElementById('f-ip').value;
-        const banner = document.getElementById('f-banner').value;
-        const desc = document.getElementById('f-desc').value;
-        if (!name || !ip || !desc) { alert(langPack[curLang].msg_err); return; }
-        const newS = { id: Date.now(), name, ip, banner, approved: false, desc_tr: desc, desc_en: desc };
-        servers.push(newS);
-        localStorage.setItem('myServers', JSON.stringify(servers));
-        alert(langPack[curLang].msg_ok);
-        showPage('home');
-    }
-
-    function renderAdmin() {
-        // 1. Onay Bekleyenler Listesi
-        const pendingContainer = document.getElementById('admin-pending-list');
-        const pending = servers.filter(s => !s.approved);
-        if (pending.length === 0) { 
-            pendingContainer.innerHTML = `<p>${langPack[curLang].no_pending}</p>`; 
-        } else {
-            let html = "";
-            pending.forEach(s => {
-                html += `
-                    <div style="background:var(--bg); padding:10px; border-radius:8px; margin-bottom:10px; border-left: 5px solid var(--gold);">
-                        <strong>${s.name}</strong> (${s.ip})<br>
-                        <button class="btn-admin-action" style="background:#2ecc71" onclick="adminAction(${s.id}, 'approve')">Onayla</button>
-                        <button class="btn-admin-action" style="background:#e74c3c" onclick="adminAction(${s.id}, 'reject')">REDDET/SİL</button>
-                    </div>`;
-            });
-            pendingContainer.innerHTML = html;
-        }
-
-        // 2. Yayındaki Sunucular Listesi (Buradan da silebilirsin)
-        const activeContainer = document.getElementById('admin-active-list');
-        const active = servers.filter(s => s.approved);
-        if (active.length === 0) {
-            activeContainer.innerHTML = `<p>${langPack[curLang].no_active}</p>`;
-        } else {
-            let html = "";
-            active.forEach(s => {
-                html += `
-                    <div style="background:var(--bg); padding:10px; border-radius:8px; margin-bottom:10px; border-left: 5px solid var(--accent); display:flex; justify-content:space-between; align-items:center;">
-                        <span><strong>${s.name}</strong> (${s.ip})</span>
-                        <button class="btn-admin-action" style="background:#e74c3c" onclick="adminAction(${s.id}, 'reject')">LİSTEDEN SİL</button>
-                    </div>`;
-            });
-            activeContainer.innerHTML = html;
-        }
-    }
-
-    function adminAction(id, type) {
-        if (type === 'approve') {
-            const idx = servers.findIndex(s => s.id === id);
-            if (idx !== -1) servers[idx].approved = true;
-        } else {
-            servers = servers.filter(s => s.id !== id);
-        }
-        localStorage.setItem('myServers', JSON.stringify(servers));
-        applySettings();
-    }
-
     async function fetchLiveStatus(ip) {
         try {
-            const res = await fetch(`https://mcapi.us/server/status?ip=${ip}`);
+            const res = await fetch(`https://api.mcstatus.io/v2/status/java/${ip}`);
             const data = await res.json();
-            return { online: data.online, p: data.players.now || 0, m: data.players.max || 0 };
+            return { online: data.online, p: data.players?.online || 0, m: data.players?.max || 0 };
         } catch (e) { return { online: false, p: 0, m: 0 }; }
     }
 
@@ -252,22 +184,27 @@
         const list = document.getElementById('server-list');
         const searchTerm = document.getElementById('search').value.toLowerCase();
         let approvedServers = servers.filter(s => s.approved && s.name.toLowerCase().includes(searchTerm));
+        
         const results = await Promise.all(approvedServers.map(async (s) => {
             const live = await fetchLiveStatus(s.ip);
             return { ...s, live };
         }));
+
         results.sort((a, b) => b.live.p - a.live.p);
+
         let html = "";
         results.forEach((s, i) => {
             const desc = curLang === 'tr' ? s.desc_tr : s.desc_en;
             const perc = s.live.m > 0 ? (s.live.p / s.live.m) * 100 : 0;
+            const bannerImg = s.banner || `https://api.mcstatus.io/v2/widget/java/${s.ip}`;
+            
             html += `
                 <tr class="server-row">
                     <td style="font-weight:bold; color:var(--accent); text-align:center">#${i+1}</td>
                     <td style="width:200px"><strong>${s.name}</strong>${s.live.p >= 50 ? '<span class="pop-badge">50+</span>' : ''}<br><small>${desc}</small></td>
                     <td>
                         <div class="banner-box">
-                            <img src="${s.banner || 'https://api.mcstatus.io/v2/widget/java/'+s.ip}" onerror="this.src='https://api.mcstatus.io/v2/widget/java/${s.ip}'">
+                            <img src="${bannerImg}" onerror="this.src='https://via.placeholder.com/468x60?text=Minecraft+Server'">
                             <div class="copy-overlay" onclick="copyIP('${s.ip}')">${langPack[curLang].copy}</div>
                         </div>
                     </td>
@@ -281,9 +218,10 @@
         list.innerHTML = html;
     }
 
+    // Yardımcı Fonksiyonlar
     function showPage(p) {
         if (p === 'admin' && !isAdmin) {
-            const pass = prompt(curLang === 'tr' ? "Şifre:" : "Password:");
+            const pass = prompt(curLang === 'tr' ? "Şifre (Varsayılan: 123456):" : "Password:");
             if (pass === "123456") { isAdmin = true; sessionStorage.setItem('isAdmin', 'true'); } else { return; }
         }
         ["home", "add", "admin", "about"].forEach(id => { document.getElementById('page-'+id).style.display = 'none'; });
@@ -293,9 +231,55 @@
 
     function toggleLang() { curLang = curLang === 'tr' ? 'en' : 'tr'; localStorage.setItem('lang', curLang); applySettings(); }
     function toggleTheme() { curTheme = curTheme === 'light' ? 'dark' : 'light'; localStorage.setItem('theme', curTheme); applySettings(); }
-    function adminLogout() { isAdmin = false; sessionStorage.removeItem('isAdmin'); showPage('home'); }
     function copyIP(ip) { navigator.clipboard.writeText(ip); alert(langPack[curLang].copy + ": " + ip); }
+    function adminLogout() { isAdmin = false; sessionStorage.removeItem('isAdmin'); showPage('home'); }
 
+    // Admin işlemleri
+    function renderAdmin() {
+        const pendingContainer = document.getElementById('admin-pending-list');
+        const activeContainer = document.getElementById('admin-active-list');
+        
+        const pending = servers.filter(s => !s.approved);
+        const active = servers.filter(s => s.approved);
+
+        pendingContainer.innerHTML = pending.length ? pending.map(s => `
+            <div style="background:var(--bg); padding:10px; border-radius:8px; margin-bottom:10px; border-left: 5px solid var(--gold);">
+                <strong>${s.name}</strong> (${s.ip})<br>
+                <button class="btn-admin-action" style="background:#2ecc71" onclick="adminAction(${s.id}, 'approve')">Onayla</button>
+                <button class="btn-admin-action" style="background:#e74c3c" onclick="adminAction(${s.id}, 'reject')">Sil</button>
+            </div>`).join('') : `<p>${langPack[curLang].no_pending}</p>`;
+
+        activeContainer.innerHTML = active.map(s => `
+            <div style="background:var(--bg); padding:10px; border-radius:8px; margin-bottom:10px; border-left: 5px solid var(--accent); display:flex; justify-content:space-between; align-items:center;">
+                <span><strong>${s.name}</strong> (${s.ip})</span>
+                <button class="btn-admin-action" style="background:#e74c3c" onclick="adminAction(${s.id}, 'reject')">Kaldır</button>
+            </div>`).join('');
+    }
+
+    function adminAction(id, type) {
+        if (type === 'approve') {
+            const idx = servers.findIndex(s => s.id === id);
+            if (idx !== -1) servers[idx].approved = true;
+        } else {
+            servers = servers.filter(s => s.id !== id);
+        }
+        localStorage.setItem('myServers', JSON.stringify(servers));
+        applySettings();
+    }
+
+    async function userAddServer() {
+        const name = document.getElementById('f-name').value;
+        const ip = document.getElementById('f-ip').value;
+        const banner = document.getElementById('f-banner').value;
+        const desc = document.getElementById('f-desc').value;
+        if (!name || !ip || !desc) { alert(langPack[curLang].msg_err); return; }
+        servers.push({ id: Date.now(), name, ip, banner, approved: false, desc_tr: desc, desc_en: desc });
+        localStorage.setItem('myServers', JSON.stringify(servers));
+        alert(langPack[curLang].msg_ok);
+        showPage('home');
+    }
+
+    // İlk Çalıştırma
     applySettings();
 </script>
 </body>
