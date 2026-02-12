@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Minecraft List</title>
+    <style>
+        :root { --bg: #f4f7f6; --text: #333; --accent: #2ecc71; --card: #fff; --gold: #f1c40f; }
+        body.dark-mode { --bg: #1a1a1a; --text: #f1f1f1; --accent: #2ecc71; --card: #2d2d2d; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); transition: 0.3s; margin: 0; padding: 0 20px; }
+        .container { max-width: 1150px; margin: 0 auto; }
+
+        header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            border-bottom: 2px solid var(--accent); padding: 15px 0; margin-bottom: 10px;
+            position: sticky; top: 0; background: var(--bg); z-index: 100;
+        }
+
+        nav button { background: none; border: none; color: var(--text); cursor: pointer; font-weight: bold; margin-right: 15px; }
+        .server-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+        
+        thead th { position: sticky; top: 80px; background: var(--bg); z-index: 90; padding: 10px 0; }
+
+        .server-row { background: var(--card); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .server-row td { padding: 15px; vertical-align: middle; }
+
+        .banner-box { 
+            position: relative; width: 468px; height: 60px; border-radius: 4px; 
+            overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center;
+        }
+        .banner-box img { width: 100%; height: 100%; object-fit: fill; transition: 0.4s; }
+        .banner-box:hover img { transform: scale(1.02); }
+        
+        .copy-overlay { 
+            position: absolute; bottom: 0; right: 0; background: rgba(0,0,0,0.7); 
+            color: white; padding: 2px 8px; font-size: 10px; cursor: pointer; 
+            border-top-left-radius: 5px; z-index: 5; 
+        }
+
+        .form-section { background: var(--card); padding: 20px; border-radius: 8px; margin-top: 20px; display: none; }
+        input, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; background: var(--card); color: var(--text); }
+        
+        .btn-main { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-admin-action { padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; color: white; margin: 5px 5px 5px 0; font-weight: bold; }
+
+        .status-online { color: var(--accent); font-size: 12px; font-weight: bold; }
+        .progress-bar { width: 100px; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 5px; }
+        .progress-fill { height: 100%; background: var(--accent); transition: 0.5s; }
+        .pop-badge { background: var(--gold); color: #000; font-size: 9px; padding: 2px 5px; border-radius: 3px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
+        
+        /* Admin başlıkları için ek stil */
+        .admin-sub-title { margin-top: 30px; border-bottom: 1px solid #ddd; padding-bottom: 5px; color: var(--accent); }
+    </style>
+</head>
+<body class="">
+
+<div class="container">
+    <header>
+        <div>
+            <h1 id="txt-logo" style="margin:0; font-size: 24px;">MC Listesi</h1>
+            <nav>
+                <button onclick="showPage('home')" id="nav-home">Ana Sayfa</button>
+                <button onclick="showPage('add')" id="nav-add">Sunucu Ekle</button>
+                <button onclick="showPage('admin')" id="nav-admin">Admin</button>
+                <button onclick="showPage('about')" id="nav-about">Hakkımızda</button>
+            </nav>
+        </div>
+        <div>
+            <button onclick="toggleLang()" class="btn-main" id="btn-lang">EN</button>
+            <button onclick="toggleTheme()" class="btn-main" id="btn-theme">🌙</button>
+        </div>
+    </header>
+
+    <div id="page-home">
+        <input type="text" id="search" placeholder="Sunucu ara..." oninput="render()">
+        <table class="server-table">
+            <thead>
+                <tr style="text-align: left; opacity: 0.6; font-size: 14px;">
+                    <th id="th-rank" style="padding-left: 15px;">Sıra</th>
+                    <th id="th-name">Sunucu</th>
+                    <th id="th-server">Banner</th>
+                    <th id="th-info">Durum</th>
+                </tr>
+            </thead>
+            <tbody id="server-list"></tbody>
+        </table>
+    </div>
+
+    <div id="page-add" class="form-section">
+        <h2 id="txt-add-title">Yeni Sunucu Öner</h2>
+        <input type="text" id="f-name">
+        <input type="text" id="f-ip">
+        <input type="text" id="f-banner">
+        <textarea id="f-desc" rows="4"></textarea>
+        <button class="btn-main" id="btn-submit" onclick="userAddServer()">Gönder</button>
+    </div>
+
+    <div id="page-about" class="form-section">
+        <h2 id="txt-about-title">Hakkımızda</h2>
+        <p id="txt-about-content"></p>
+    </div>
+
+    <div id="page-admin" class="form-section">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 id="txt-admin-title">Admin Kontrol Paneli</h2>
+            <button onclick="adminLogout()" class="btn-main" id="btn-logout" style="background:#444;">Çıkış Yap</button>
+        </div>
+        
+        <h3 class="admin-sub-title">1. Onay Bekleyenler</h3>
+        <div id="admin-pending-list"></div>
+
+        <h3 class="admin-sub-title">2. Yayındaki Sunucuları Yönet (Sil)</h3>
+        <div id="admin-active-list"></div>
+    </div>
+</div>
+
+<script>
+    const masterPool = [
+        { id: 1, name: "Hypixel", ip: "mc.hypixel.net", banner: "", approved: true, desc_tr: "Dünyanın en büyüğü.", desc_en: "World's largest." },
+        { id: 2, name: "CraftRise", ip: "play.craftrise.tc", banner: "", approved: true, desc_tr: "Türk Network.", desc_en: "Turkish Network." },
+        { id: 3, name: "SonOyuncu", ip: "play.sonoyuncu.network", banner: "", approved: true, desc_tr: "Efsanevi Türk sunucusu.", desc_en: "Legendary Turkish server." }
+    ];
+
+    if (!localStorage.getItem('v22_full_management')) {
+        localStorage.clear();
+        localStorage.setItem('myServers', JSON.stringify(masterPool));
+        localStorage.setItem('v22_full_management', 'true');
+    }
+
+    let servers = JSON.parse(localStorage.getItem('myServers')) || masterPool;
+    let isAdmin = sessionStorage.getItem('isAdmin') === 'true';
+    let curLang = localStorage.getItem('lang') || 'tr';
+    let curTheme = localStorage.getItem('theme') || 'light';
+
+    const langPack = {
+        tr: { 
+            logo: "MC Listesi", home: "Ana Sayfa", add: "Sunucu Ekle", admin: "Admin", about: "Hakkımızda",
+            rank: "Sıra", name: "Sunucu", server: "Banner", info: "Durum", copy: "Kopyala",
+            online: "Aktif", search: "Sunucu ara...", add_title: "Yeni Sunucu Öner", submit: "Gönder",
+            admin_title: "Admin Kontrol Paneli", logout: "Çıkış Yap",
+            ph_name: "Sunucu İsmi", ph_ip: "Sunucu Adresi (IP)", ph_banner: "Banner Görsel URL", ph_desc: "Kısa Açıklama",
+            about_title: "Hakkımızda", about_content: "Bu liste, en aktif Minecraft sunucularını bulmanız için tasarlanmıştır. Sunucular gerçek zamanlı oyuncu sayılarına göre sıralanır.",
+            no_pending: "Onay bekleyen sunucu yok.", no_active: "Yayında sunucu yok.", msg_ok: "Gönderildi!", msg_err: "Eksik bilgi!"
+        },
+        en: { 
+            logo: "MC List", home: "Home", add: "Add Server", admin: "Admin", about: "About Us",
+            rank: "Rank", name: "Server", server: "Banner", info: "Status", copy: "Copy",
+            online: "Online", search: "Search server...", add_title: "Suggest Server", submit: "Submit",
+            admin_title: "Admin Panel", logout: "Logout",
+            ph_name: "Server Name", ph_ip: "Server IP", ph_banner: "Banner URL", ph_desc: "Description",
+            about_title: "About Us", about_content: "This list helps you find the most active Minecraft servers. Ranked by live player counts.",
+            no_pending: "No pending servers.", no_active: "No active servers.", msg_ok: "Submitted!", msg_err: "Missing info!"
+        }
+    };
+
+    function applySettings() {
+        document.body.className = curTheme === 'dark' ? 'dark-mode' : '';
+        const d = langPack[curLang];
+        document.getElementById('txt-logo').innerText = d.logo;
+        document.getElementById('nav-home').innerText = d.home;
+        document.getElementById('nav-add').innerText = d.add;
+        document.getElementById('nav-admin').innerText = d.admin;
+        document.getElementById('nav-about').innerText = d.about;
+        document.getElementById('th-rank').innerText = d.rank;
+        document.getElementById('th-name').innerText = d.name;
+        document.getElementById('th-server').innerText = d.server;
+        document.getElementById('th-info').innerText = d.info;
+        document.getElementById('search').placeholder = d.search;
+        document.getElementById('txt-add-title').innerText = d.add_title;
+        document.getElementById('btn-submit').innerText = d.submit;
+        document.getElementById('btn-lang').innerText = curLang === 'tr' ? 'EN' : 'TR';
+        document.getElementById('f-name').placeholder = d.ph_name;
+        document.getElementById('f-ip').placeholder = d.ph_ip;
+        document.getElementById('f-banner').placeholder = d.ph_banner;
+        document.getElementById('f-desc').placeholder = d.ph_desc;
+        document.getElementById('txt-about-title').innerText = d.about_title;
+        document.getElementById('txt-about-content').innerText = d.about_content;
+        render();
+        if(isAdmin) renderAdmin();
+    }
+
+    async function userAddServer() {
+        const name = document.getElementById('f-name').value;
+        const ip = document.getElementById('f-ip').value;
+        const banner = document.getElementById('f-banner').value;
+        const desc = document.getElementById('f-desc').value;
+        if (!name || !ip || !desc) { alert(langPack[curLang].msg_err); return; }
+        const newS = { id: Date.now(), name, ip, banner, approved: false, desc_tr: desc, desc_en: desc };
+        servers.push(newS);
+        localStorage.setItem('myServers', JSON.stringify(servers));
+        alert(langPack[curLang].msg_ok);
+        showPage('home');
+    }
+
+    function renderAdmin() {
+        // 1. Onay Bekleyenler Listesi
+        const pendingContainer = document.getElementById('admin-pending-list');
+        const pending = servers.filter(s => !s.approved);
+        if (pending.length === 0) { 
+            pendingContainer.innerHTML = `<p>${langPack[curLang].no_pending}</p>`; 
+        } else {
+            let html = "";
+            pending.forEach(s => {
+                html += `
+                    <div style="background:var(--bg); padding:10px; border-radius:8px; margin-bottom:10px; border-left: 5px solid var(--gold);">
+                        <strong>${s.name}</strong> (${s.ip})<br>
+                        <button class="btn-admin-action" style="background:#2ecc71" onclick="adminAction(${s.id}, 'approve')">Onayla</button>
+                        <button class="btn-admin-action" style="background:#e74c3c" onclick="adminAction(${s.id}, 'reject')">REDDET/SİL</button>
+                    </div>`;
+            });
+            pendingContainer.innerHTML = html;
+        }
+
+        // 2. Yayındaki Sunucular Listesi (Buradan da silebilirsin)
+        const activeContainer = document.getElementById('admin-active-list');
+        const active = servers.filter(s => s.approved);
+        if (active.length === 0) {
+            activeContainer.innerHTML = `<p>${langPack[curLang].no_active}</p>`;
+        } else {
+            let html = "";
+            active.forEach(s => {
+                html += `
+                    <div style="background:var(--bg); padding:10px; border-radius:8px; margin-bottom:10px; border-left: 5px solid var(--accent); display:flex; justify-content:space-between; align-items:center;">
+                        <span><strong>${s.name}</strong> (${s.ip})</span>
+                        <button class="btn-admin-action" style="background:#e74c3c" onclick="adminAction(${s.id}, 'reject')">LİSTEDEN SİL</button>
+                    </div>`;
+            });
+            activeContainer.innerHTML = html;
+        }
+    }
+
+    function adminAction(id, type) {
+        if (type === 'approve') {
+            const idx = servers.findIndex(s => s.id === id);
+            if (idx !== -1) servers[idx].approved = true;
+        } else {
+            servers = servers.filter(s => s.id !== id);
+        }
+        localStorage.setItem('myServers', JSON.stringify(servers));
+        applySettings();
+    }
+
+    async function fetchLiveStatus(ip) {
+        try {
+            const res = await fetch(`https://mcapi.us/server/status?ip=${ip}`);
+            const data = await res.json();
+            return { online: data.online, p: data.players.now || 0, m: data.players.max || 0 };
+        } catch (e) { return { online: false, p: 0, m: 0 }; }
+    }
+
+    async function render() {
+        const list = document.getElementById('server-list');
+        const searchTerm = document.getElementById('search').value.toLowerCase();
+        let approvedServers = servers.filter(s => s.approved && s.name.toLowerCase().includes(searchTerm));
+        const results = await Promise.all(approvedServers.map(async (s) => {
+            const live = await fetchLiveStatus(s.ip);
+            return { ...s, live };
+        }));
+        results.sort((a, b) => b.live.p - a.live.p);
+        let html = "";
+        results.forEach((s, i) => {
+            const desc = curLang === 'tr' ? s.desc_tr : s.desc_en;
+            const perc = s.live.m > 0 ? (s.live.p / s.live.m) * 100 : 0;
+            html += `
+                <tr class="server-row">
+                    <td style="font-weight:bold; color:var(--accent); text-align:center">#${i+1}</td>
+                    <td style="width:200px"><strong>${s.name}</strong>${s.live.p >= 50 ? '<span class="pop-badge">50+</span>' : ''}<br><small>${desc}</small></td>
+                    <td>
+                        <div class="banner-box">
+                            <img src="${s.banner || 'https://api.mcstatus.io/v2/widget/java/'+s.ip}" onerror="this.src='https://api.mcstatus.io/v2/widget/java/${s.ip}'">
+                            <div class="copy-overlay" onclick="copyIP('${s.ip}')">${langPack[curLang].copy}</div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="status-online">${s.live.online ? '● ' + langPack[curLang].online : '○ Offline'}</div>
+                        <small>${s.live.p.toLocaleString()} / ${s.live.m.toLocaleString()}</small>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${perc}%"></div></div>
+                    </td>
+                </tr>`;
+        });
+        list.innerHTML = html;
+    }
+
+    function showPage(p) {
+        if (p === 'admin' && !isAdmin) {
+            const pass = prompt(curLang === 'tr' ? "Şifre:" : "Password:");
+            if (pass === "123456") { isAdmin = true; sessionStorage.setItem('isAdmin', 'true'); } else { return; }
+        }
+        ["home", "add", "admin", "about"].forEach(id => { document.getElementById('page-'+id).style.display = 'none'; });
+        document.getElementById('page-'+p).style.display = 'block';
+        if (p === 'admin') renderAdmin();
+    }
+
+    function toggleLang() { curLang = curLang === 'tr' ? 'en' : 'tr'; localStorage.setItem('lang', curLang); applySettings(); }
+    function toggleTheme() { curTheme = curTheme === 'light' ? 'dark' : 'light'; localStorage.setItem('theme', curTheme); applySettings(); }
+    function adminLogout() { isAdmin = false; sessionStorage.removeItem('isAdmin'); showPage('home'); }
+    function copyIP(ip) { navigator.clipboard.writeText(ip); alert(langPack[curLang].copy + ": " + ip); }
+
+    applySettings();
+</script>
+</body>
+</html>
